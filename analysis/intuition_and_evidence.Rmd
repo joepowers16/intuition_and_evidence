@@ -1,0 +1,546 @@
+---
+title: "Scientists are human: Understanding and overcoming bias in the evaluation of educational interventions"
+author: "Joseph T. Powers"
+date: "July 7, 2017"
+output: html_document
+---
+
+```{r global options, include=FALSE}
+knitr::opts_chunk$set(
+  fig.path = 'figs/', fig.show = 'asis', dpi = 300, 
+  knitr.table.format = "html",
+  include = TRUE, echo = FALSE, 
+  warning = FALSE, message = FALSE, cache = FALSE
+) 
+
+options(knitr.table.format = "html") 
+```
+
+```{r load packages and custom functions, warning=FALSE, message=FALSE, include=FALSE}
+# clear_workspace
+rm(list = ls())
+ls()
+
+source("package_demo.R")
+```
+
+```{r set parameters}
+# data files
+file_data_full <- "../data/ris.rds"
+
+# vectors for subsetting
+list_conf <- c("AERA12", "AERA13", "AERA14", "AERA16")
+
+# renaming functions for plots and tables
+group_levels_narrow = c("atypical\n+\nweak", "atypical\n+\nstrong", 
+  "stereo\n+\nweak", "stereo\n+\nstrong")
+
+coord_support <- c(3, 4.5)
+coord_grant <- c(2.5, 3.5)
+
+grant_y_labels <- function(y){      
+  6 - y
+}
+
+evalrating_x_labels <- function(x){      
+  ifelse(x == 1, str_c(x,"\nLowest\nRating"),
+  ifelse(x == 7, str_c(x,"\nHighest\nRating"), x))
+}
+
+# Set intuitive table names to replace variable names from data
+rename_bars <- function(x){ 
+  x %>%
+  ## rename conditions
+  str_replace("\n\\+\n\\-", "") %>% 
+  str_replace("\n\\+\nNone", "") %>% 
+  str_replace("\n\\+\nPlcbo", "") %>% 
+  str_replace("Trt_Aff", "Self-\nAffirm") %>% 
+  str_replace("Affirm", "Affirm\nCore\nValues") %>%  
+  str_replace("Catyl", "Catalyst\nFraming") %>% 
+  str_replace("Med1st", "Mediator\nFraming") %>% 
+  str_replace("Bas_Rt", "Basic Right\nFraming") %>%
+  str_replace("Precom", "Precommit\nto\nCriteria") %>%
+  str_replace("Tchr", "Teachers\nReceive\nProgram") %>%
+  str_replace_all("Strong", "Strong\nEvidence") %>% 
+  str_replace("Evidence\nEvidence", "Evidence")
+}
+
+rename_facets4 <- c(
+  "atypical\n+\nweak" = "Atypical Intervention\n+\nWeak Evidence", 
+  "atypical\n+\nstrong" = "Atypical Intervention\n+\nStrong Evidence",
+  "stereotypical\n+\nweak" = "Stereotypical Intervention\n+\nWeak Evidence",
+  "stereotypical\n+\nstrong" = "Stereotypical Intervention\n+\nStrong Evidence"
+)
+
+rename_facets2 <- c("atypical" = "Atypical Intervention", 
+  "stereotypical" = "Stereotypical Intervention")
+
+bar_fill_values <- c("#ff6263", "#00c5c7")
+```
+
+A problem that I tackled in my research is the lackluster support for evidence-based interventions in education. 
+
+I often observed that programs that match policy-makers' intuitions about how school should look receive more support for implementation than programs with strong evidence that don't resemble policy-makers' expectations and intuitions.
+
+```{r load data}
+data_full <- read_rds(file_data_full)
+```
+
+```{r create subset of unprimed ed conference Ps, include=FALSE}
+data_conf_no_prime <- 
+  data_full %>% 
+  filter(
+    survey %in% list_conf,
+    prime_t == "-"
+  )
+```
+
+So the first step in this program was to document empirically whether such a bias against atypical educational interventions existed. 
+
+And I did this in a two-by-two experiment. And I explored three explanations and solutions for the bias against atypical programs in education: 
+
+1. Lack of training
+1. Threat to career/identity
+1. Stereotypical thinking (i.e., heuristics)
+
+## Support for Different Types of Interventions
+
+```{r support_hlm and barplot}
+# HLM of effects
+support_hlm <- 
+  lmer(support_cv ~ evid_cc * type_cc + (1 | survey), data = data_conf_no_prime) 
+
+# Sample size in model
+support_hlm_n <- str_c(support_hlm@pp$Zt@Dim[2])
+
+# Bar plot effects
+lmer(support_cv ~ evid_f * type_f + (1 | survey), 
+    data = data_conf_no_prime) %>% 
+    plot_lmer_means(lmer_model = ., "evid_f:type_f") %>% 
+  ggplot(aes(x = fct_rev(evid_f %>% str_to_title), y = fit, 
+    fill = fct_rev(evid_f))) + 
+    geom_col() + 
+    geom_errorbar(aes(ymin = fit - se, ymax = fit + se), 
+      size = .4, width = .1) + 
+    facet_grid(. ~ type_f, labeller = as_labeller(rename_facets2)) + 
+    labs(
+      x = "Evidence Quality\n\n", 
+      y = "\nSupport for Intervention (1-7)\n",
+      title = glue("Atypical school programs with strong evidence get only as much\nsupport as stereotypical programs with weak evidence (N = {support_hlm_n}).")
+    ) + 
+    coord_cartesian(ylim = coord_support) +
+    report_theme
+```
+
+#### Policy makers are basing their support for educational programs on evidence quality and educational stereotypes to almost the same degree. 
+```{r support_hlm_table, include=TRUE, echo=FALSE}
+# display HLM
+support_hlm %>% 
+  inline_format_lmer_coefs() %>% 
+  print_hlm_table_with_cis() 
+```
+
+Results are from hierarchical linear model nesting by survey year. Overall Mean(SD) of Support = `r mean_sd(data_conf_no_prime, support_cv)`
+
+## Grant Funding for School Interventions
+
+These effects even hold up when we look at grant funding: 
+```{r grant_hlm & bar plot}
+grant_hlm <- 
+  lmer(grant_cv ~ evid_cc * type_cc + (1 | survey), data = data_conf_no_prime) 
+
+grant_hlm_n <- str_c(grant_hlm@pp$Zt@Dim[2])
+
+lmer(grant_cv ~ evid_f * type_f + (1 | survey), data = data_conf_no_prime) %>% 
+  plot_lmer_means(lmer_model = ., "evid_f:type_f") %>% 
+  # plot
+  ggplot(aes(x = fct_rev(evid_f %>% str_to_title), y = fit, fill = fct_rev(evid_f))) + 
+    geom_col() + 
+    geom_errorbar(aes(ymin = fit - se, ymax = fit + se), 
+      size = .4, width = .1) + 
+    facet_grid(. ~ type_f, 
+      labeller = as_labeller(rename_facets2)) + 
+    labs(
+      x = "Evidence Quality\n\n\n\n", 
+      y = "\nGrant Support for Intervention (1-5)\n",
+      title = glue("Atypical school programs with strong evidence get same grant\nsupport as stereotypical programs with weak evidence (N = {grant_hlm_n}).")
+    ) + 
+    coord_cartesian(ylim = coord_grant) +
+    report_theme
+```
+
+### Grant Funding as a function of evidence quality and sterotypicality conditions
+```{r grant_hlm_table, include=TRUE, echo=FALSE}
+# display HLM
+grant_hlm %>% 
+  inline_format_lmer_coefs() %>% 
+  print_hlm_table_with_cis() 
+```
+
+Results are from hierarchical linear model nesting by survey year. Overall Mean(SD) of Grant Support = `r mean_sd(data_conf_no_prime, grant_cv)`
+
+## What are possible explanations for this gap in support that migth point toward solutions? 
+
+### Lack of training in research methods?  
+
+#### Breakdown of sample by training levels:
+```{r include=FALSE}
+data_conf_no_prime %>%
+  group_by(degree_f) %>% 
+  dplyr::rename(`highest degree` = degree_f) %>%
+  count() %>% 
+  table_count_format() 
+```
+
+```{r Condensed breakdown by training levels}
+# let's collapse degree levels for comparing effects of training on bias
+data_conf_no_prime %>%
+  mutate(degree_f = fct_collapse(degree_f,
+    "PhD" = c("PhD", "EdD"),
+    "MA" = c("MDorJD", "MA")
+  )) %>% 
+  filter(degree_f %in% c("PhD", "MA", "BA")) %>% 
+  group_by(degree_f) %>% 
+  count() %>% 
+  dplyr::rename(`highest degree` = degree_f) %>% 
+  table_count_format()
+```
+
+```{r boxplots, include=FALSE}
+data_conf_no_prime %>%
+  mutate(degree_f = fct_collapse(degree_f,
+    "PhD" = c("PhD", "EdD"),
+    "MA" = c("MDorJD", "MA")
+  )) %>% 
+  filter(degree_f %in% c("PhD", "MA")) %>% 
+  mutate(
+    degree_f = factor(degree_f, levels = c("PhD", "MA")),
+    group_f = str_replace_all(group_f, "stereotypical", "stereo"),
+    group_f = factor(group_f, levels = group_levels_narrow)
+  ) %>% 
+  ggplot(aes(x = group_f, y = support_cv, fill = evid_f)) + 
+  geom_boxplot() + 
+  facet_grid(~ degree_f)
+```
+
+```{r barplots by training level, include=TRUE}
+data_conf_no_prime %>%
+  mutate(degree_f = fct_collapse(degree_f,
+    "PhD" = c("PhD", "EdD"),
+    "MA" = c("MDorJD", "MA")
+  )) %>% 
+  # filter(degree_f %in% c("PhD", "MA")) %>% 
+  mutate(
+    degree_f = factor(degree_f, levels = c("PhD", "MA")),
+    group_f = str_replace_all(group_f, "stereotypical", "stereo"),
+    group_f = factor(group_f, levels = group_levels_narrow)
+  ) %>% 
+  ggplot(aes(x = group_f, y = support_cv, fill = evid_f)) + 
+    stat_summary(fun.y = "mean", geom = "col") + 
+    stat_summary(fun.data = mean_se, geom = "errorbar", width = .1) + 
+    facet_grid(~ degree_f) + 
+    coord_cartesian(ylim = c(2.5, 4.5)) + 
+    scale_fill_discrete("Evidence\nQuality") + 
+    labs(title = "Further training is not resulting in more even-handed weighting of evidence.",
+      subtitle = "Ironically people with no declared graduate degree may the show least bias.",
+      x = NULL) 
+```
+
+```{r include=FALSE}
+data_conf_no_prime %>%
+  mutate(degree_f = fct_collapse(degree_f,
+    "PhD" = c("PhD", "EdD"),
+    "MA" = c("MDorJD", "MA")
+  )) %>% 
+  mutate(
+    degree_f = factor(degree_f, levels = c("PhD", "MA")),
+    group_f = str_replace_all(group_f, "stereotypical", "stereo"),
+    group_f = factor(group_f, levels = group_levels_narrow)
+  ) %>% 
+  group_by(degree_f) %>% 
+  count() %>% 
+  table_count_format()
+```
+
+```{r hlm models for masters and phds}
+support_hlm_phd <- lmer(support_cv ~ evid_cc * type_cc + (1 | survey), 
+  data = data_conf_no_prime %>% filter(degree_f == "PhD")
+  ) 
+support_hlm_phd_n <- str_c(support_hlm_phd@pp$Zt@Dim[2])
+
+support_hlm_ma <- lmer(support_cv ~ evid_cc * type_cc + (1 | survey), 
+  data = data_conf_no_prime %>% filter(degree_f == "MA")
+  ) 
+support_hlm_ma_n <- str_c(support_hlm_ma@pp$Zt@Dim[2])
+```
+
+<br>
+
+#### Phd Subsample (N = `r support_hlm_phd_n`)
+```{r phds}
+support_hlm_phd %>%
+  inline_format_lmer_coefs() %>% 
+  print_hlm_table_with_cis()
+```
+
+#### Master's (MA) subsample (N = `r support_hlm_ma_n`)
+```{r MAs}
+support_hlm_ma %>%
+  inline_format_lmer_coefs() %>% 
+  print_hlm_table_with_cis()
+```
+
+#### Qualitative vs. Quantitative Training? 
+```{r barplots qualquant, fig.width=8, fig.height=4}
+data_conf_no_prime %>% 
+  filter(degree_f %in% c("PhD", "EdD")) %>% 
+  mutate(
+    group_f = str_replace_all(group_f, "stereotypical", "stereo"),
+    group_f = factor(group_f, levels = group_levels_narrow)
+  ) %>% 
+  ggplot(aes(x = group_f, y = support_cv, fill = evid_f)) + 
+  stat_summary(fun.y = "mean", geom = "col") + 
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = .1) + 
+  facet_grid(~ QualQuant_f) + 
+  coord_cartesian(ylim = c(2.5, 4.5)) +
+  scale_fill_discrete("Evidence\nQuality") + 
+  labs(title = "Further training is not resulting in more even-handed weighting of evidence.",
+    subtitle = "Ironically people with no declared graduate degree may the show least bias.",
+    x = NULL) 
+
+data_conf_no_prime %>% 
+  filter(degree_f %in% c("PhD", "EdD")) %>% 
+  group_by(QualQuant_f) %>% 
+  count() %>% 
+  dplyr::rename(Methodology = QualQuant_f) %>% 
+  table_count_format()
+```
+
+The only insight from exploring Qual vs. Quant distinction among PhDs is that Quants differ in heavily penalizing the atypical program with weak evidence, but are otherwise unmoved by evidence, surprisingly.
+
+So regardless of having a master's or phd in quantitative or qualitative methods people still show similar levels of bias to the full sample, which would suggest that a lack of education or training is not the problem. 
+
+## Might new atypical approaches represent a threat to the careers/identities of established researchers? 
+
+If so then we would expect to see biased evaluation of evidence supporting threatening findings. 
+
+```{r bar plot of eval quality rating, fig.height=6}
+evalrating_hlm <- lmer(evalrating_cv ~ evid_cc * type_cc + (1 | survey), 
+  data = data_conf_no_prime) 
+
+evalrating_hlm_n <- str_c(evalrating_hlm@pp$Zt@Dim[2])
+
+# Create table of means and SEs
+lmer(evalrating_cv ~ evid_f * type_f + (1 | survey), data = data_conf_no_prime) %>% 
+  plot_lmer_means(lmer_model = ., "evid_f:type_f") %>%
+  # plot
+  ggplot(aes(x = fct_rev(str_to_title(evid_f)), y = fit, fill = fct_rev(evid_f))) + 
+    geom_col() + 
+    geom_errorbar(aes(ymin = fit - se, ymax = fit + se), 
+      size = .4, width = .1) + 
+    facet_grid(. ~ type_f, 
+      labeller = as_labeller(rename_facets2)) + 
+    theme(strip.text.x = element_text(size = 10)) + 
+    labs(
+      x = "Evidence Quality\n\n\n\n", 
+      y = "\nEvaluation Quality Rating (1-7)\n",
+      title = glue("Participants rated evidence based on its rigor, not the type of program\nthe evidence supported (N = {evalrating_hlm_n}).")
+      ) + 
+    coord_cartesian(ylim = c(2.5, 5)) +
+    report_theme
+
+evalrating_hlm %>%
+  inline_format_lmer_coefs() %>% 
+  print_hlm_table_with_cis()
+```
+
+### Perhaps reviewers weight the same evidence differently when determining their actual support? 
+```{r fig.support_3way, include=TRUE, echo=FALSE, fig.height=6, fig.width=7, fig.keep='high'}
+legend_order <- c("stereotypical\n+\nweak", "atypical\n+\nweak", "stereotypical\n+\nstrong", "atypical\n+\nstrong")
+
+add_space <- function(x){      
+  str_c("\n", x, "\n")
+}
+
+data_conf_no_prime %>% 
+  mutate(group_f = factor(str_to_title(group_f), 
+    levels = str_to_title(legend_order))) %>% 
+  ggplot(aes(x = evalrating_cv, y = support_cv, color = group_f)) + 
+    geom_jitter(height = 0, width = .1, color = "black", size = 1, 
+      alpha = .5) + 
+    geom_smooth(method = "lm", size = .75, se = TRUE, fullrange = TRUE) +
+    coord_cartesian(x = c(.9, 7.1) , y = c(0.5, 7.5)) +
+    scale_x_reverse("Participant Rating of Evaluation Quality",
+      breaks = seq(1, 7, by = 1), 
+      labels = evalrating_x_labels
+    ) + 
+    scale_y_continuous("Support for Intervention (1-7)\n", breaks = c(1:7)) + 
+    scale_color_discrete("Experimental\nGroup", labels = add_space) + 
+    report_line_theme +
+    labs(title = "Reviewers may give benefit of the doubt to stereotypical\nprograms with weak evidence."
+    ) + 
+    guides(color = guide_legend(override.aes = list(fill = NA)))
+```
+
+```{r fig.height=4.5, fig.width=10.25, fig.keep='high'}
+data_conf_no_prime %>% 
+  # process data for visual clustering of adjacent scatterplot points
+  select(support_cv, evalrating_cv, group_f) %>% 
+  filter(complete.cases(.)) %>% 
+  mutate(support_rnd = round(support_cv / .25) * .25) %>% 
+  group_by(support_rnd, evalrating_cv, group_f) %>% 
+  summarise(n = n()) %>% 
+  # right_join processed data to original dataset
+  right_join(
+    data_conf_no_prime %>% 
+    select(support_cv, evalrating_cv, group_f) %>% 
+    filter(complete.cases(.)) %>% 
+    mutate(support_rnd = round(support_cv / .25) * .25),
+    by = c("support_rnd", "evalrating_cv", "group_f")
+  ) %>% 
+  # set order and colors to match prior plot
+  mutate(group_f = factor(group_f, levels = legend_order)) %>% 
+  # plot
+  ggplot(aes(x = evalrating_cv, y = support_cv, size = n,
+    color = group_f
+  )) + 
+    geom_jitter(aes(fill = group_f), color = "black", shape = 21, 
+      alpha = .5, height = 0, width = .1) + 
+    geom_smooth(method = "lm", size = .75, se = TRUE, fullrange = TRUE, 
+      color = "black") +
+    facet_grid( ~ fct_reorder2(group_f, evalrating_cv, rev(support_cv)),
+      labeller = as_labeller(rename_facets4)
+    ) + 
+    coord_cartesian(x = c(.9, 7.1) , y = c(0.5, 7.5)) +
+    scale_x_reverse("Participant Rating of Evaluation Quality",
+      breaks = seq(1, 7, by = 1), 
+      labels = evalrating_x_labels
+    ) +  
+    scale_y_continuous("Support for Intervention (1-7)\n", breaks = c(1:7)) + 
+    scale_fill_discrete(guide = FALSE) +
+    scale_size_continuous(name = "Point\nDensity", breaks = c(1, 5, 10)) +
+    report_line_theme +
+    theme(panel.spacing = unit(1.5, "lines")) + 
+    labs(title = "Examining data by experimental groups reveals no abnormal values that would undermine the weaker\ndrop off in support for stereotypical interventions with weak evidence.") 
+```
+
+## Experimental methods targeting bias against atypical school interventions:
+```{r sample size per group}
+experimental_group_n <- 
+  data_full %>% 
+  group_by(prime_t) %>% 
+  count() %>% 
+  table_count_format()
+
+data_ab_tests <- 
+  data_full %>% 
+  filter(
+    survey == "AERA16",
+    prime_t %in% c("-", "Affirm", "Precom", "Tchr")
+  ) %>% 
+  kable(align = "r") %>% 
+  kable_styling()
+```
+
+```{r first reveal of 2016 experiment}
+stereo_str_mn <- 
+  data_full %>% 
+  filter(survey == "AERA16", type_f == "stereotypical", evid_f == "strong", 
+    prime_t == "-") %>% 
+  pull(support_cv) %>% 
+  mean(., na.rm = TRUE)
+
+data_full %>% 
+  filter(
+    survey == "AERA16", 
+    prime_t %in% c("Affirm", "Precom", "Tchr", "-"),
+    evid_f == "strong",
+    !is.na(type_f),
+    !is.na(support_cv)
+  ) %>% 
+  Rmisc::summarySE("support_cv", c("type_f", "evid_f", "prime_t")) %>% 
+  mutate(
+    predictor = str_c(str_to_title(evid_f), prime_t, sep = "\n+\n"),
+    predictor = rename_bars(predictor),
+    predictor = factor(predictor, levels = predictor), 
+    type_f = fct_rev(type_f)
+  ) %>% 
+  # mutate to drop bar while maintaining bar formatting
+  mutate(support_cv = ifelse(prime_t != "-", 0, support_cv)) %>% 
+  # The Plot
+  ggplot(aes(x = predictor, y = support_cv)) + 
+  geom_col(aes(fill = type_f, width = c(.2, .8, .8, .8, .8)), 
+    position = position_dodge(),
+    colour = "black", size = 0
+  ) + 
+  geom_errorbar(aes(ymin = support_cv - se, ymax = support_cv + se), 
+    size = .4, width = .1, position = position_dodge(9)) + 
+  facet_grid(. ~ type_f, labeller = as_labeller(rename_facets2),
+    scales = "free") + # to drop the empty columns 
+  geom_hline(yintercept = stereo_str_mn, color = "red") + 
+  labs(title = "Three approaches to insulating reviewers from stereotypical thinking.") + 
+  coord_cartesian(ylim = coord_support) + 
+  report_theme
+```
+
+```{r plot of 2016 experiment}
+stereo_str_mn <- 
+  data_full %>% 
+  filter(survey == "AERA16", type_f == "stereotypical", evid_f == "strong", 
+    prime_t == "-") %>% 
+  pull(support_cv) %>% 
+  mean(., na.rm = TRUE)
+
+data_full %>% 
+  filter(
+    survey == "AERA16", 
+    prime_t %in% c("Affirm", "Precom", "Tchr", "-"),
+    evid_f == "strong",
+    !is.na(type_f),
+    !is.na(support_cv)
+  ) %>% 
+  Rmisc::summarySE("support_cv", c("type_f", "evid_f", "prime_t")) %>% 
+  mutate(
+    predictor = str_c(str_to_title(evid_f), prime_t, sep = "\n+\n"),
+    predictor = rename_bars(predictor),
+    predictor = factor(predictor, levels = predictor), 
+    type_f = fct_rev(type_f)
+  ) %>% 
+  # The Plot
+  ggplot(aes(x = predictor, y = support_cv)) + 
+  geom_col(aes(fill = type_f, width = c(.2, .8, .8, .8, .8)), 
+    position = position_dodge(),
+    colour = "black", size = 0
+  ) + 
+  geom_errorbar(aes(ymin = support_cv - se, ymax = support_cv + se), 
+    size = .4, width = .1, position = position_dodge(9)) + 
+  facet_grid(. ~ type_f, labeller = as_labeller(rename_facets2),
+    scales = "free") + # to drop the empty columns 
+  geom_hline(yintercept = stereo_str_mn, color = "red") + 
+  labs(title = "Insulating reviewers from stereotypical thinking through a\n precommitment exercise was effective in eliminating the support gap.",
+  subtitle = "Repackaging the key elements of the atypical intervention in a more stereotypical\n teacher training program was also successful in eliminating support gap.", x = "", y = "Support for Program (1-7)\n") + 
+  coord_cartesian(ylim = coord_support) + 
+  report_theme
+```
+
+```{r}
+precom_t <- 
+  data_full %>% 
+  filter(
+    survey == "AERA16", type_f == "atypical", evid_f == "strong",
+    prime_t %in% c("Precom", "-")
+  ) %>% 
+  t.test(support_cv ~ fct_rev(prime_t), .) %>% 
+  tidy()
+
+teacher_t <- data_full %>% 
+  filter(
+    survey == "AERA16", type_f == "atypical", evid_f == "strong",
+    prime_t %in% c("-", "Tchr")
+  ) %>% 
+  t.test(support_cv ~ fct_rev(prime_t), .) %>% 
+  tidy()
+```
+
+Both the precommitment and teacher-retraining conditions represent significant improvements above baseline, `r ttval(precom_t)` and `r ttval(teacher_t)`, respectively. 
+
