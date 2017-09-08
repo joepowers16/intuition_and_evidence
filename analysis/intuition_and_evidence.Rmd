@@ -2,7 +2,7 @@
 title: "Scientists are human: Understanding and overcoming bias in the evaluation of educational interventions"
 author: "Joseph T. Powers"
 date: "July 7, 2017"
-output: html_document
+output: github_document
 ---
 
 ```{r global options, include=FALSE}

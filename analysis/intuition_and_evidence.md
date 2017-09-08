@@ -1,4 +1,4 @@
-Evidence and Intuition
+Scientists are human: Understanding and overcoming bias in the evaluation of educational interventions
 ================
 Joseph T. Powers
 July 7, 2017
@@ -27,7 +27,7 @@ Support for Different Types of Interventions
 <thead>
 <tr>
 <th style="text-align:right;">
-Parameter
+Variable
 </th>
 <th style="text-align:right;">
 Estimate
@@ -114,18 +114,21 @@ Evidence Quality (Contrast) x Stereotypicality (Contrast)
 </tr>
 </tbody>
 </table>
-Mean(SD) of Support = 3.84(0.98)
+Results are from hierarchical linear model nesting by survey year. Overall Mean(SD) of Support = 3.84(0.98)
 
 Grant Funding for School Interventions
 --------------------------------------
 
 These effects even hold up when we look at grant funding: ![](figs/grant_hlm%20&%20bar%20plot-1.png)
+
+### Grant Funding as a function of evidence quality and sterotypicality conditions
+
 <?xml version="1.0" encoding="UTF-8"?>
 <table class="table" style="margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:right;">
-Parameter
+Variable
 </th>
 <th style="text-align:right;">
 Estimate
@@ -212,7 +215,7 @@ Evidence Quality (Contrast) x Stereotypicality (Contrast)
 </tr>
 </tbody>
 </table>
-Mean(SD) of Grant Support = 3.21(0.81)
+Results are from hierarchical linear model nesting by survey year. Overall Mean(SD) of Grant Support = 3.21(0.81)
 
 What are possible explanations for this gap in support that migth point toward solutions?
 -----------------------------------------------------------------------------------------
@@ -226,72 +229,7 @@ What are possible explanations for this gap in support that migth point toward s
 <thead>
 <tr>
 <th style="text-align:right;">
-degree\_f
-</th>
-<th style="text-align:right;">
-n
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:right;">
-PhD
-</td>
-<td style="text-align:right;">
-382
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-EdD
-</td>
-<td style="text-align:right;">
-63
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-MDorJD
-</td>
-<td style="text-align:right;">
-7
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-MA
-</td>
-<td style="text-align:right;">
-242
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-BA
-</td>
-<td style="text-align:right;">
-42
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-139
-</td>
-</tr>
-</tbody>
-</table>
-##### Condensed breakdown by training levels:
-
-<?xml version="1.0" encoding="UTF-8"?>
-<table class="table table-striped" style="width: auto !important; text-align: right;">
-<thead>
-<tr>
-<th style="text-align:right;">
-degree\_f
+highest degree
 </th>
 <th style="text-align:right;">
 n
@@ -326,45 +264,9 @@ BA
 </tbody>
 </table>
 ![](figs/barplots%20by%20training%20level-1.png)
-<?xml version="1.0" encoding="UTF-8"?>
-<table class="table table-striped" style="width: auto !important; text-align: right;">
-<thead>
-<tr>
-<th style="text-align:right;">
-degree\_f
-</th>
-<th style="text-align:right;">
-n
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:right;">
-PhD
-</td>
-<td style="text-align:right;">
-445
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-MA
-</td>
-<td style="text-align:right;">
-249
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-181
-</td>
-</tr>
-</tbody>
-</table>
+
+<br>
+
 #### Phd Subsample (N = 382)
 
 <?xml version="1.0" encoding="UTF-8"?>
@@ -372,7 +274,7 @@ NA
 <thead>
 <tr>
 <th style="text-align:right;">
-Parameter
+Variable
 </th>
 <th style="text-align:right;">
 Estimate
@@ -466,7 +368,7 @@ Evidence Quality (Contrast) x Stereotypicality (Contrast)
 <thead>
 <tr>
 <th style="text-align:right;">
-Parameter
+Variable
 </th>
 <th style="text-align:right;">
 Estimate
@@ -561,7 +463,7 @@ Evidence Quality (Contrast) x Stereotypicality (Contrast)
 <thead>
 <tr>
 <th style="text-align:right;">
-QualQuant\_f
+Methodology
 </th>
 <th style="text-align:right;">
 n
@@ -610,7 +512,7 @@ If so then we would expect to see biased evaluation of evidence supporting threa
 <thead>
 <tr>
 <th style="text-align:right;">
-Parameter
+Variable
 </th>
 <th style="text-align:right;">
 Estimate
@@ -701,7 +603,7 @@ Evidence Quality (Contrast) x Stereotypicality (Contrast)
 
 ![](figs/fig.support_3way-1.png)
 
-![](figs/unnamed-chunk-4-1.png)
+![](figs/unnamed-chunk-3-1.png)
 
 Experimental methods targeting bias against atypical school interventions:
 --------------------------------------------------------------------------
